@@ -74,56 +74,67 @@ Modern payments face an existential threat: **Generative AI has democratized wea
 
 ---
 
-## 🚀 Quickstart Guide
+---
 
-### Prerequisites
-- Python 3.9+ (or Python 3.11)
-- Node.js 18+ & npm
-- *(Optional)* Docker & Docker Compose
+## 🚀 Deployment & Quickstart Guide
+
+### Option 1: 1-Click Cloud Deployment (Render.com)
+The repository includes a ready-to-deploy [`render.yaml`](file:///Users/pujansonani/Desktop/PAYGUARD%20X/render.yaml) blueprint that automatically provisions both the FastAPI backend service and the Vite React frontend:
+1. Go to [Render Dashboard](https://dashboard.render.com/) ➔ **New** ➔ **Blueprint**.
+2. Connect your GitHub repository (`https://github.com/pujansonani/PAYGUARD-X`).
+3. Render will automatically read `render.yaml`, spin up `payguard-x-backend` (Python) and `payguard-x-frontend` (Static Site), and link their environment variables.
 
 ---
 
-### Option A: Local Development Setup
+### Option 2: Deploy Frontend on Vercel + Backend on Render / Railway
+
+#### A. Deploy Backend on Render / Railway
+1. **New Web Service** on [Render](https://render.com) or [Railway](https://railway.app).
+2. Root Directory: `payguard-x/backend`
+3. Build Command: `pip install -r requirements.txt`
+4. Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Copy your deployed backend URL (e.g. `https://payguard-x-backend.onrender.com`).
+
+#### B. Deploy Frontend on Vercel
+1. Go to [Vercel](https://vercel.com) ➔ **Add New Project** ➔ Import `pujansonani/PAYGUARD-X`.
+2. Root Directory: `payguard-x/frontend`
+3. Framework Preset: **Vite**
+4. Environment Variable:
+   - `VITE_API_URL` = `https://payguard-x-backend.onrender.com` (your backend URL)
+5. Click **Deploy**.
+
+---
+
+### Option 3: Docker & Docker Compose (Any Cloud VM / AWS / GCP / DigitalOcean)
+
+Run the full production stack with one command:
+```bash
+cd payguard-x
+docker compose up --build -d
+```
+- **Frontend Dashboard UI**: `http://<YOUR_SERVER_IP>:5173`
+- **Backend FastAPI API**: `http://<YOUR_SERVER_IP>:8000`
+- **Interactive Swagger Docs**: `http://<YOUR_SERVER_IP>:8000/docs`
+
+---
+
+### Option 4: Local Development Setup
 
 #### 1. Start the Backend API
 ```bash
 cd payguard-x/backend
-
-# Create & activate virtual environment (optional if already active)
 python3 -m venv venv
 source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the FastAPI server
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-*Backend interactive Swagger docs available at: http://127.0.0.1:8000/docs*
 
 #### 2. Start the Frontend Dashboard
 ```bash
 cd payguard-x/frontend
-
-# Install dependencies
 npm install
-
-# Run the Vite development server
 npm run dev
 ```
-*Frontend web application available at: http://localhost:5173*
-
----
-
-### Option B: Docker Compose Setup
-
-Run both services in containerized isolation:
-```bash
-cd payguard-x
-docker-compose up --build
-```
-- Frontend UI: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
 
 ---
 

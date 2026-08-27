@@ -1,17 +1,39 @@
 version: '3.8'
+
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: payguard_x_backend
+    restart: always
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - payguard_network
+
   frontend:
-    image: node:20-alpine
-    working_dir: /app
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: payguard_x_frontend
+    restart: always
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-    command: sh -c "npm install && npm run dev -- --host"
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - payguard_network
+
+networks:
+  payguard_network:
+    driver: bridge
