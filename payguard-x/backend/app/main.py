@@ -2,12 +2,15 @@ import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+import os
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from ml.taxonomy.attack_catalog import FULL_ATTACK_TAXONOMY, CATEGORIES
 from ml.generators.synthetic_engine import SyntheticTransactionGenerator
@@ -522,3 +525,24 @@ def run_judge_mode():
         "demonstration_verdict": "CLOSED_LOOP_ADAPTATION_VERIFIED",
         "narrative": "PAYGUARD-X successfully identified emerging attack patterns, generated realistic synthetic telemetry, detected intrusions with high precision, analyzed defense blindspots, and hardened models against evasive variants."
     }
+
+# --- STATIC FRONTEND MOUNT (UNIFIED FULL-STACK SERVING) ---
+frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"))
+if os.path.exists(frontend_dist):
+    assets_dir = os.path.join(frontend_dist, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # Exclude API endpoints and docs
+        if full_path.startswith(("health", "attacks", "detect", "models", "adversarial", "transactions", "experiments", "reports", "settings", "demo", "docs", "openapi.json", "redoc")):
+            raise HTTPException(status_code=404, detail="API route not found")
+        file_path = os.path.join(frontend_dist, full_path)
+        if full_path and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        index_file = os.path.join(frontend_dist, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"status": "OPERATIONAL", "service": "PAYGUARD-X Backend API"}
+
