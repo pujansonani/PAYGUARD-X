@@ -3,8 +3,8 @@ title: PAYGUARD-X AI Defense Lab
 emoji: 🛡️
 colorFrom: red
 colorTo: blue
-sdk: docker
-app_port: 7860
+sdk: gradio
+app_file: space_app.py
 pinned: false
 license: mit
 ---
