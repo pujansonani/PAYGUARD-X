@@ -12,7 +12,11 @@ import {
   JudgeModeResult
 } from '../types';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+let rawApiUrl = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+if (rawApiUrl && !rawApiUrl.startsWith('http://') && !rawApiUrl.startsWith('https://')) {
+  rawApiUrl = `https://${rawApiUrl}`;
+}
+const API_BASE_URL = rawApiUrl;
 
 const client = axios.create({
   baseURL: API_BASE_URL,

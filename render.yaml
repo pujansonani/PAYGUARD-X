@@ -20,7 +20,7 @@ services:
         fromService:
           type: web
           name: payguard-x-backend
-          property: url
+          property: host
     routes:
       - type: rewrite
         source: /*
