@@ -1,3 +1,14 @@
+---
+title: PAYGUARD-X AI Defense Lab
+emoji: 🛡️
+colorFrom: red
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # PAYGUARD-X: Autonomous AI Defense Lab for Next-Gen Payment Security
 
 <p align="center">
