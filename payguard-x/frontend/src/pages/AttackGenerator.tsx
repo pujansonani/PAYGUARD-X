@@ -14,8 +14,10 @@ import {
   Sparkles,
   BarChart2
 } from 'lucide-react';
+import { CyberLoadingScreen } from '../components/CyberLoadingScreen';
 import { api } from '../services/api';
 import { FidelityReport, SyntheticTransaction } from '../types';
+import { playCyberSound } from '../utils/audio';
 
 interface AttackGeneratorProps {
   onNavigate: (viewId: string) => void;
@@ -47,6 +49,7 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
 
   const handleGenerate = async () => {
     setLoading(true);
+    playCyberSound('scan');
     try {
       const res = await api.generateAttacks({
         n_samples: nSamples,
@@ -57,8 +60,10 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
       setSummary(res);
       setFidelity(res.fidelity);
       setPreview(res.sample_preview);
+      playCyberSound('success');
     } catch (err) {
       console.error('Generation error:', err);
+      playCyberSound('alert');
     } finally {
       setLoading(false);
     }
@@ -66,6 +71,7 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
 
   const exportCSV = () => {
     if (!preview.length) return;
+    playCyberSound('click');
     const headers = Object.keys(preview[0]).join(',');
     const rows = preview.map((p) => Object.values(p).join(','));
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
@@ -80,6 +86,7 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
 
   const exportJSON = () => {
     if (!preview.length) return;
+    playCyberSound('click');
     const jsonStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(preview, null, 2));
     const link = document.createElement('a');
     link.setAttribute('href', jsonStr);
@@ -91,6 +98,13 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
+      {/* Holographic Loader during Generation */}
+      <CyberLoadingScreen
+        isLoading={loading}
+        message="SYNTHESIZING PARAMETRIC ATTACK TELEMETRY"
+        subMessage="Calibrating Log-Normal amounts & Gamma customer age distributions..."
+      />
+
       {/* Header Banner */}
       <div className="p-6 md:p-8 bg-gradient-to-r from-red-950/40 via-[#070c18] to-amber-950/40 border border-amber-500/30 rounded-3xl backdrop-blur-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-2 max-w-2xl">
@@ -202,7 +216,7 @@ export const AttackGenerator: React.FC<AttackGeneratorProps> = ({ onNavigate }) 
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-red-600 via-amber-500 to-cyan-500 hover:from-red-500 hover:to-cyan-400 text-slate-950 font-cyber font-black text-xs uppercase tracking-wider rounded-xl shadow-neon-amber flex items-center justify-center gap-2 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+            className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-red-600 via-amber-500 to-cyan-500 hover:from-red-500 hover:to-cyan-400 text-slate-950 font-cyber font-black text-xs uppercase tracking-wider rounded-xl shadow-neon-amber flex items-center justify-center gap-2 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
           >
             {loading ? (
               <>

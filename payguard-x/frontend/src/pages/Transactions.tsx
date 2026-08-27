@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ReceiptText, Search, Filter, Download, FileSpreadsheet, CheckCircle2, AlertCircle, ShieldAlert, Zap } from 'lucide-react';
+import { ReceiptText, Search, Filter, Download, FileSpreadsheet, CheckCircle2, AlertCircle, ShieldAlert, Zap, ExternalLink } from 'lucide-react';
+import { SkeletonCard } from '../components/SkeletonLoader';
 import { api } from '../services/api';
 import { SyntheticTransaction } from '../types';
+import { playCyberSound } from '../utils/audio';
 
-export const Transactions: React.FC = () => {
+interface TransactionsProps {
+  onSelectTransaction?: (tx: SyntheticTransaction) => void;
+}
+
+export const Transactions: React.FC<TransactionsProps> = ({ onSelectTransaction }) => {
   const [transactions, setTransactions] = useState<SyntheticTransaction[]>([]);
   const [search, setSearch] = useState('');
   const [fraudOnly, setFraudOnly] = useState(false);
@@ -42,6 +48,7 @@ export const Transactions: React.FC = () => {
 
   const exportCSV = () => {
     if (!filtered.length) return;
+    playCyberSound('click');
     const headers = Object.keys(filtered[0]).join(',');
     const rows = filtered.map((tx) => Object.values(tx).join(','));
     const csv = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
@@ -68,7 +75,7 @@ export const Transactions: React.FC = () => {
             Payment Transaction Ledger Explorer
           </h1>
           <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-sans">
-            Search, filter, and audit live synthetic transactions with ground truth labels, AI multi-model predictions, calibrated risk scores, and decision states.
+            Search, filter, and audit live synthetic transactions. Click any transaction row to open the deep-dive ISO 8583 and SHAP signal attribution inspector.
           </p>
         </div>
 
@@ -126,74 +133,86 @@ export const Transactions: React.FC = () => {
       </div>
 
       {/* Transactions Table Container */}
-      <div className="p-6 bg-[#070c18]/90 border border-white/10 rounded-3xl space-y-3.5 shadow-glass-card backdrop-blur-xl">
-        <div className="flex items-center justify-between text-xs text-slate-400 font-mono px-1">
-          <span>Displaying {filtered.length} Transaction Records</span>
-          <span className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>{loading ? 'Refreshing ledger...' : 'Live Synced'}</span>
-          </span>
-        </div>
+      {loading ? (
+        <SkeletonCard rows={8} />
+      ) : (
+        <div className="p-6 bg-[#070c18]/90 border border-white/10 rounded-3xl space-y-3.5 shadow-glass-card backdrop-blur-xl">
+          <div className="flex items-center justify-between text-xs text-slate-400 font-mono px-1">
+            <span>Displaying {filtered.length} Transaction Records (Click to inspect)</span>
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Synced</span>
+            </span>
+          </div>
 
-        <div className="overflow-x-auto border border-white/10 rounded-2xl">
-          <table className="w-full text-left text-xs font-mono">
-            <thead className="bg-[#030712] text-slate-400 uppercase text-[10px] border-b border-white/10">
-              <tr>
-                <th className="p-3.5">TX ID</th>
-                <th className="p-3.5">Amount</th>
-                <th className="p-3.5">Channel</th>
-                <th className="p-3.5">Merchant</th>
-                <th className="p-3.5">Threat Vector</th>
-                <th className="p-3.5">Risk Score</th>
-                <th className="p-3.5">Decision</th>
-                <th className="p-3.5 text-right">Ground Truth</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filtered.map((tx) => {
-                const isFN = tx.fraud_label === 1 && tx.prediction !== 'BLOCK';
-                return (
-                  <tr
-                    key={tx.transaction_id}
-                    className={`transition-colors ${isFN ? 'bg-amber-950/20 hover:bg-amber-950/30' : 'hover:bg-white/[0.03]'}`}
-                  >
-                    <td className="p-3.5 font-bold text-slate-300 truncate max-w-[140px]">{tx.transaction_id}</td>
-                    <td className="p-3.5 text-white font-bold">${tx.amount.toFixed(2)}</td>
-                    <td className="p-3.5 text-slate-400">{tx.payment_channel}</td>
-                    <td className="p-3.5 text-slate-400">{tx.merchant_category}</td>
-                    <td className="p-3.5 text-amber-300 font-sans font-medium">{tx.attack_family}</td>
-                    <td className="p-3.5 font-bold text-cyan-400">{tx.risk_score?.toFixed(1) || 'N/A'}</td>
-                    <td className="p-3.5">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          tx.prediction === 'BLOCK'
-                            ? 'bg-red-950 text-red-400 border border-red-800 shadow-neon-red'
-                            : tx.prediction === 'REVIEW'
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                            : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                        }`}
-                      >
-                        {tx.prediction || 'ALLOW'}
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      {tx.fraud_label === 1 ? (
-                        <span className="px-2 py-0.5 bg-red-950/90 text-red-400 border border-red-500/50 rounded text-[10px] font-black shadow-neon-red">
-                          FRAUD
+          <div className="overflow-x-auto border border-white/10 rounded-2xl">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-[#030712] text-slate-400 uppercase text-[10px] border-b border-white/10">
+                <tr>
+                  <th className="p-3.5">TX ID</th>
+                  <th className="p-3.5">Amount</th>
+                  <th className="p-3.5">Channel</th>
+                  <th className="p-3.5">Merchant</th>
+                  <th className="p-3.5">Threat Vector</th>
+                  <th className="p-3.5">Risk Score</th>
+                  <th className="p-3.5">Decision</th>
+                  <th className="p-3.5 text-right">Ground Truth</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {filtered.map((tx) => {
+                  const isFN = tx.fraud_label === 1 && tx.prediction !== 'BLOCK';
+                  return (
+                    <tr
+                      key={tx.transaction_id}
+                      onClick={() => {
+                        playCyberSound('click');
+                        onSelectTransaction?.(tx);
+                      }}
+                      className={`cursor-pointer transition-colors group ${
+                        isFN ? 'bg-amber-950/20 hover:bg-amber-950/40' : 'hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <td className="p-3.5 font-bold text-slate-300 truncate max-w-[140px] group-hover:text-cyan-300">
+                        {tx.transaction_id}
+                      </td>
+                      <td className="p-3.5 text-white font-bold">${tx.amount.toFixed(2)}</td>
+                      <td className="p-3.5 text-slate-400">{tx.payment_channel}</td>
+                      <td className="p-3.5 text-slate-400">{tx.merchant_category}</td>
+                      <td className="p-3.5 text-amber-300 font-sans font-medium">{tx.attack_family}</td>
+                      <td className="p-3.5 font-bold text-cyan-400">{tx.risk_score?.toFixed(1) || 'N/A'}</td>
+                      <td className="p-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            tx.prediction === 'BLOCK'
+                              ? 'bg-red-950 text-red-400 border border-red-800 shadow-neon-red'
+                              : tx.prediction === 'REVIEW'
+                              ? 'bg-amber-950 text-amber-400 border border-amber-800'
+                              : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                          }`}
+                        >
+                          {tx.prediction || 'ALLOW'}
                         </span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-emerald-950/90 text-emerald-400 border border-emerald-500/50 rounded text-[10px] font-black shadow-neon-emerald">
-                          LEGIT
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        {tx.fraud_label === 1 ? (
+                          <span className="px-2 py-0.5 bg-red-950/90 text-red-400 border border-red-500/50 rounded text-[10px] font-black shadow-neon-red">
+                            FRAUD
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-emerald-950/90 text-emerald-400 border border-emerald-500/50 rounded text-[10px] font-black shadow-neon-emerald">
+                            LEGIT
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

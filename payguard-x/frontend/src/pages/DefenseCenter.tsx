@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { ShieldCheck, Play, RotateCcw, RotateCw, AlertTriangle, Shield, CheckCircle, Zap, Layers, Activity, Sparkles, Send } from 'lucide-react';
 import { RiskGauge } from '../components/RiskGauge';
 import { ShapWaterfall } from '../components/ShapWaterfall';
+import { CyberLoadingScreen } from '../components/CyberLoadingScreen';
 import { api } from '../services/api';
 import { TransactionPrediction, PaymentChannel, MerchantCategory } from '../types';
+import { playCyberSound } from '../utils/audio';
 
 export const DefenseCenter: React.FC = () => {
   const [formData, setFormData] = useState<{
@@ -132,23 +134,38 @@ export const DefenseCenter: React.FC = () => {
 
   const handleAnalyze = async () => {
     setLoading(true);
+    playCyberSound('scan');
     try {
       const res = await api.detectTransaction(formData);
       setPrediction(res);
+      if (res.recommended_action === 'BLOCK') {
+        playCyberSound('alert');
+      } else {
+        playCyberSound('success');
+      }
     } catch (err) {
       console.error('Detection error:', err);
+      playCyberSound('alert');
     } finally {
       setLoading(false);
     }
   };
 
   const applyPreset = (presetData: any) => {
+    playCyberSound('click');
     setFormData(presetData);
     setPrediction(null);
   };
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
+      {/* Holographic Loader during multi-model evaluation */}
+      <CyberLoadingScreen
+        isLoading={loading}
+        message="MULTI-MODEL STACKING ENSEMBLE SCORING"
+        subMessage="Extracting SHAP tree feature attribution weights..."
+      />
+
       {/* Header Banner */}
       <div className="p-6 md:p-8 bg-gradient-to-r from-cyan-950/40 via-[#070c18] to-emerald-950/40 border border-cyan-500/30 rounded-3xl backdrop-blur-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-2 max-w-2xl">

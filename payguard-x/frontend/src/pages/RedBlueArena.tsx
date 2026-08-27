@@ -13,8 +13,10 @@ import {
   Layers
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import { CyberLoadingScreen } from '../components/CyberLoadingScreen';
 import { api } from '../services/api';
 import { ArenaBattleResult, ArenaRound } from '../types';
+import { playCyberSound } from '../utils/audio';
 
 export const RedBlueArena: React.FC = () => {
   const [rounds, setRounds] = useState<number>(3);
@@ -41,6 +43,7 @@ export const RedBlueArena: React.FC = () => {
 
   const handleRunArena = async () => {
     setLoading(true);
+    playCyberSound('scan');
     try {
       const res = await api.runAdversarialLoop({
         rounds: rounds,
@@ -50,8 +53,10 @@ export const RedBlueArena: React.FC = () => {
         retrain_between_rounds: retrain
       });
       setBattleResult(res);
+      playCyberSound('success');
     } catch (err) {
       console.error('Arena battle error:', err);
+      playCyberSound('alert');
     } finally {
       setLoading(false);
     }
@@ -69,6 +74,13 @@ export const RedBlueArena: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-fadeIn">
+      {/* Holographic Loader during Battle */}
+      <CyberLoadingScreen
+        isLoading={loading}
+        message="SIMULATING RED VS BLUE ADVERSARIAL BATTLE"
+        subMessage="Extracting false negatives, mutating evasions, and retraining Stacking Arbiter..."
+      />
+
       {/* Header Banner */}
       <div className="p-6 md:p-8 bg-gradient-to-r from-red-950/50 via-[#070c18] to-cyan-950/50 border border-cyan-500/30 rounded-3xl backdrop-blur-2xl shadow-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-2 max-w-2xl">

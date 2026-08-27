@@ -16,21 +16,30 @@ import {
   Layers,
   Terminal,
   Crosshair,
-  Lock
+  Lock,
+  ExternalLink
 } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { LoopFlowDiagram } from '../components/LoopFlowDiagram';
 import { RiskGauge } from '../components/RiskGauge';
 import { ShapWaterfall } from '../components/ShapWaterfall';
+import { AnimatedCounter } from '../components/AnimatedCounter';
+import { SkeletonCard } from '../components/SkeletonLoader';
 import { api } from '../services/api';
 import { GlobalMetrics, SyntheticTransaction, TransactionPrediction } from '../types';
+import { playCyberSound } from '../utils/audio';
 
 interface DashboardProps {
   onNavigate: (viewId: string) => void;
   onOpenJudgeMode: () => void;
+  onSelectTransaction?: (tx: SyntheticTransaction) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onOpenJudgeMode }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  onNavigate,
+  onOpenJudgeMode,
+  onSelectTransaction
+}) => {
   const [metrics, setMetrics] = useState<GlobalMetrics | null>(null);
   const [recentTx, setRecentTx] = useState<SyntheticTransaction[]>([]);
   const [sampleInference, setSampleInference] = useState<TransactionPrediction | null>(null);
@@ -100,7 +109,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onOpenJudgeMod
           {/* Quick Action CTAs */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
-              onClick={() => onNavigate('attack-generator')}
+              onClick={() => {
+                playCyberSound('click');
+                onNavigate('attack-generator');
+              }}
               className="px-5 py-3 bg-red-600/90 hover:bg-red-500 text-white font-cyber font-black text-xs uppercase tracking-wider rounded-xl shadow-neon-red flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
             >
               <Flame className="h-4 w-4" />
@@ -108,7 +120,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onOpenJudgeMod
             </button>
 
             <button
-              onClick={onOpenJudgeMode}
+              onClick={() => {
+                playCyberSound('click');
+                onOpenJudgeMode();
+              }}
               className="px-5 py-3 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 hover:from-amber-300 hover:to-amber-300 text-slate-950 font-cyber font-black text-xs uppercase tracking-wider rounded-xl shadow-neon-amber flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
             >
               <Sparkles className="h-4 w-4 text-slate-950" />
@@ -119,40 +134,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onOpenJudgeMod
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Attack Taxonomy Scenarios"
-          value={metrics ? `${metrics.total_attack_scenarios} Active` : '40+ Active'}
-          subValue="Across 10 Threat Families"
-          icon={Flame}
-          colorTheme="red"
-          trend="+100% GenAI Coverage"
-        />
-        <StatCard
-          title="Model Precision Rate"
-          value={metrics ? `${(metrics.precision * 100).toFixed(1)}%` : '96.2%'}
-          subValue="Low False-Positive Friction"
-          icon={ShieldCheck}
-          colorTheme="emerald"
-          trend="0.8% FPR Target"
-        />
-        <StatCard
-          title="Defense Recall Coverage"
-          value={metrics ? `${(metrics.recall * 100).toFixed(1)}%` : '97.4%'}
-          subValue="Post-Hardening Adaptation"
-          icon={Zap}
-          colorTheme="cyan"
-          trend="+8.5% Hardening Gain"
-        />
-        <StatCard
-          title="Statistical Fidelity Score"
-          value={metrics ? `${metrics.fidelity_score}%` : '94.8%'}
-          subValue="Optimal Non-Separability (JS Div)"
-          icon={Database}
-          colorTheme="amber"
-          trend="Realistic Overlap"
-        />
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={2} />
+          <SkeletonCard rows={2} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Attack Taxonomy Scenarios"
+            value={`${metrics?.total_attack_scenarios || 40}+ Active`}
+            subValue="Across 10 Threat Families"
+            icon={Flame}
+            colorTheme="red"
+            trend="+100% GenAI Coverage"
+          />
+          <StatCard
+            title="Model Precision Rate"
+            value={`${((metrics?.precision || 0.962) * 100).toFixed(1)}%`}
+            subValue="Low False-Positive Friction"
+            icon={ShieldCheck}
+            colorTheme="emerald"
+            trend="0.8% FPR Target"
+          />
+          <StatCard
+            title="Defense Recall Coverage"
+            value={`${((metrics?.recall || 0.974) * 100).toFixed(1)}%`}
+            subValue="Post-Hardening Adaptation"
+            icon={Zap}
+            colorTheme="cyan"
+            trend="+8.5% Hardening Gain"
+          />
+          <StatCard
+            title="Statistical Fidelity Score"
+            value={`${metrics?.fidelity_score || 94.8}%`}
+            subValue="Optimal Non-Separability (JS Div)"
+            icon={Database}
+            colorTheme="amber"
+            trend="Realistic Overlap"
+          />
+        </div>
+      )}
 
       {/* 5-Stage Closed Loop Flow */}
       <LoopFlowDiagram onStageClick={(stageId) => onNavigate(stageId)} />
@@ -246,8 +270,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate, onOpenJudgeMod
                 </thead>
                 <tbody className="divide-y divide-white/5 font-mono">
                   {recentTx.map((tx) => (
-                    <tr key={tx.transaction_id} className="hover:bg-white/[0.03] transition-colors">
-                      <td className="p-3.5 text-slate-300 font-bold truncate max-w-[120px]">{tx.transaction_id}</td>
+                    <tr
+                      key={tx.transaction_id}
+                      onClick={() => {
+                        playCyberSound('click');
+                        onSelectTransaction?.(tx);
+                      }}
+                      className="hover:bg-white/[0.04] transition-colors cursor-pointer group"
+                    >
+                      <td className="p-3.5 text-slate-300 font-bold truncate max-w-[120px] group-hover:text-cyan-300">
+                        {tx.transaction_id}
+                      </td>
                       <td className="p-3.5 text-white font-bold">${tx.amount.toFixed(2)}</td>
                       <td className="p-3.5 text-slate-400">{tx.payment_channel}</td>
                       <td className="p-3.5 text-amber-300 font-sans font-medium">{tx.attack_family}</td>

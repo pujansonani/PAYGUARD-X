@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   ShieldAlert,
@@ -15,6 +16,7 @@ import {
   Cpu,
   Layers
 } from 'lucide-react';
+import { playCyberSound } from '../utils/audio';
 
 interface SidebarProps {
   currentView: string;
@@ -63,13 +65,13 @@ export const navGroups = [
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) => {
   return (
-    <aside className="w-72 border-r border-white/10 bg-[#070c18]/95 backdrop-blur-2xl flex flex-col justify-between p-4 shrink-0 min-h-[calc(100vh-5rem)] shadow-2xl">
+    <aside className="w-72 border-r border-white/[0.08] bg-[#070c18]/95 backdrop-blur-2xl flex flex-col justify-between p-4 shrink-0 min-h-[calc(100vh-5rem)] shadow-2xl select-none">
       <div className="space-y-6 overflow-y-auto pr-1">
         {navGroups.map((group) => (
           <div key={group.category} className="space-y-1.5">
             <div className="px-3 text-[10px] font-mono font-bold tracking-widest text-slate-500 uppercase flex items-center justify-between">
               <span>{group.category}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-800"></span>
             </div>
 
             <div className="space-y-1">
@@ -79,14 +81,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
                 return (
                   <button
                     key={item.id}
-                    onClick={() => onSelectView(item.id)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-xs transition-all duration-200 group relative ${
+                    onClick={() => {
+                      playCyberSound('click');
+                      onSelectView(item.id);
+                    }}
+                    onMouseEnter={() => playCyberSound('hover')}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-medium text-xs transition-all duration-200 group relative ${
                       isActive
-                        ? 'bg-gradient-to-r from-cyan-950/80 via-[#0b1b36] to-[#071326] border border-cyan-500/50 text-cyan-300 font-bold shadow-neon-cyan'
-                        : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.04] border border-transparent'
+                        ? 'text-cyan-300 font-bold'
+                        : 'text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
+                    {/* Framer Motion Sliding Active Pill */}
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeSidebarPill"
+                        className="absolute inset-0 bg-gradient-to-r from-cyan-950/80 via-[#0b1b36] to-[#071326] border border-cyan-500/50 rounded-2xl shadow-neon-cyan"
+                        transition={{ type: 'spring', damping: 22, stiffness: 220 }}
+                      />
+                    )}
+
+                    <div className="flex items-center gap-3 relative z-10">
                       <Icon
                         className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
                           isActive ? 'text-cyan-400' : 'text-slate-500 group-hover:text-slate-300'
@@ -95,21 +110,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
                       <span className="truncate tracking-tight">{item.label}</span>
                     </div>
 
-                    {item.badge && (
-                      <span
-                        className={`px-1.5 py-0.5 text-[9px] font-mono font-extrabold rounded-md ${
-                          item.badge === 'LIVE'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-red-950 text-red-400 border border-red-800 animate-pulse'
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-
-                    {isActive && (
-                      <span className="absolute left-0 top-2 bottom-2 w-1 bg-cyan-400 rounded-r-full shadow-neon-cyan"></span>
-                    )}
+                    <div className="flex items-center gap-1.5 relative z-10">
+                      {item.badge && (
+                        <span
+                          className={`px-1.5 py-0.5 text-[9px] font-mono font-extrabold rounded-md ${
+                            item.badge === 'LIVE'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : 'bg-red-950 text-red-400 border border-red-800 animate-pulse'
+                          }`}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
                   </button>
                 );
               })}
@@ -119,9 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
       </div>
 
       {/* Bottom Telemetry HUD Box */}
-      <div className="mt-4 p-3.5 bg-gradient-to-br from-[#0b1326] to-[#030712] border border-white/10 rounded-2xl space-y-2.5 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl pointer-events-none"></div>
-
+      <div className="mt-4 p-4 bg-gradient-to-br from-[#0b1326] via-[#070c18] to-[#030712] border border-white/10 rounded-2xl space-y-2.5 shadow-lg relative overflow-hidden">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <Cpu className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
@@ -135,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onSelectView }) =
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] font-mono text-slate-400">
             <span>Co-Evolution State</span>
-            <span className="text-emerald-400 font-bold">100% ONLINE</span>
+            <span className="text-emerald-400 font-bold">100% READY</span>
           </div>
           <div className="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-white/10">
             <div className="bg-gradient-to-r from-cyan-400 via-purple-500 to-red-500 h-1.5 rounded-full w-full animate-shimmer"></div>
